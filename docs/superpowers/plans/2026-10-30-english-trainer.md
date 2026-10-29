@@ -17,7 +17,7 @@
 - No API keys; sources: ru.wiktionary.org, api.mymemory.translated.net, api.dictionaryapi.dev, api.tatoeba.org.
 - Default folders: `English/Словарь/`, index `English/Словарь.md`, books `English/Книги/<Название>/` with `<Название>.md`, `Главы/`, `Словарь/`, `Словарь книги.md`.
 - Card frontmatter keys exactly: `type: word`, `word`, `translation`, `transcription`, `pos`, `dictionary`, `source_link`, `status`, `due`, `interval`, `ease`, `reps`, `lapses`, `added`, `tags: [english/word]`.
-- Status: `новое` (reps = 0), `выучено` (interval ≥ 21), else `учу`. Session size default 15, max 10 new per session.
+- Status: `новое` (reps = 0), `выучено` (interval ≥ 21), else `учу`. Session size 10–20 (setting, default 15), max 10 new per session. Two grades only: «не знаю» / «знаю».
 - UI text in Russian. Build output deployed to `/Applications/Obsidian/.obsidian/plugins/english-trainer/` (`main.js`, `manifest.json`, `styles.css`).
 
 ## Review Focus
@@ -54,17 +54,16 @@
   - `interface Meaning { text: string; examples: Example[] }`, `interface Example { en: string; ru?: string }`
   - `interface WordEntry { word: string; translation: string; meanings: Meaning[]; transcription: string; pos: string; synonyms: string[]; examples: Example[]; audio?: string }`
   - `interface SrsState { due: string /*YYYY-MM-DD*/; interval: number; ease: number; reps: number; lapses: number }`
-  - `type Grade = 0 | 1 | 2` (0 не знаю, 1 трудно, 2 знаю); `type Status = "новое" | "учу" | "выучено"`
+  - `type Grade = 0 | 1` (0 не знаю, 1 знаю); `type Status = "новое" | "учу" | "выучено"`
   - `newSrs(today: string): SrsState`, `review(s: SrsState, g: Grade, today: string): SrsState`, `statusOf(s: SrsState): Status`, `isDue(s: SrsState, today: string): boolean`
   - `interface Settings { dictFolder; dictIndex; booksFolder; sessionSize: number; maxNew: number }` + `DEFAULT_SETTINGS` (values from Global Constraints), `class SettingsTab`.
 
 - [ ] **Step 1:** Tests:
   - `newSrs("2026-10-30")` → `{due:"2026-10-30",interval:0,ease:2.5,reps:0,lapses:0}`;
-  - `review(new, 2, d)` → interval 1, due d+1;
-  - second 2 → interval 6;
-  - third 2 → interval `round(6*ease)`;
+  - `review(new, 1, d)` → interval 1, due d+1;
+  - second 1 → interval 6;
+  - third 1 → interval `round(6*ease)`, ease +0.1;
   - grade 0 → interval 0, due = today, lapses+1, ease −0.2 (floor 1.3);
-  - grade 1 → interval `max(1, round(interval*1.2))`, ease −0.15;
   - `statusOf` with reps 0 / interval 5 / interval 21 → новое / учу / выучено.
 - [ ] **Step 2:** Run `npx vitest run tests/srs.test.ts` — FAIL.
 - [ ] **Step 3:** Implement (SM-2 variant as specified by the tests; dates as local `YYYY-MM-DD` strings).
@@ -219,7 +218,7 @@
 - Produces: `VIEW_TYPE_QUIZ = "english-trainer-quiz"`, `class QuizView extends ItemView`.
   - **Start screen:** source select («Общий словарь», each book, «Всё»), shows due/new counts, button «Начать».
   - **Item screens per format:**
-    - flash: word, then «Показать», then «Не знаю / Трудно / Знаю»;
+    - flash: word, then «Показать», then «Не знаю / Знаю»;
     - choice: 4 big buttons;
     - type / cloze: input + «Проверить», case-insensitive trimmed comparison.
   - **Feedback** shown 1 s, wrong answers re-queued once at the end.
