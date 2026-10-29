@@ -1,1 +1,48 @@
-/* English Trainer */
+/* English Trainer — mobile-first: big targets, 16px inputs (no iOS zoom) */
+.et-modal .et-input,
+.et-quiz .et-input {
+  width: 100%;
+  font-size: 16px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.et-btn {
+  min-height: 44px;
+  padding: 0 18px;
+  font-size: 16px;
+}
+.et-row {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+.et-muted {
+  color: var(--text-muted);
+}
+.et-warn {
+  color: var(--text-warning);
+}
+.et-word {
+  margin-bottom: 2px;
+}
+.et-label {
+  margin-top: 12px;
+  font-weight: 600;
+}
+.et-list {
+  margin-top: 4px;
+}
+.et-textarea {
+  width: 100%;
+  min-height: 60px;
+  font-size: 16px;
+}
+.et-quote {
+  border-left: 3px solid var(--interactive-accent);
+  padding-left: 10px;
+  color: var(--text-muted);
+}
+.is-mobile .et-row .et-btn {
+  flex: 1;
+}
