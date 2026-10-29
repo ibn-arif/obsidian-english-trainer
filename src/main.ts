@@ -16,6 +16,7 @@ export default class EnglishTrainerPlugin extends Plugin {
     this.registerView(VIEW_TYPE_QUIZ, (leaf) => new QuizView(leaf, () => this.settings));
     this.addRibbonIcon("languages", "Добавить английское слово", () => this.openAddWord());
     this.addRibbonIcon("graduation-cap", "Заучивание слов", () => void this.openQuiz());
+    this.addRibbonIcon("book-plus", "Загрузить книгу (EPUB/PDF)", () => new ImportBookModal(this.app, this.settings).open());
     this.addCommand({ id: "open-quiz", name: "Заучивание", callback: () => void this.openQuiz() });
     this.addCommand({ id: "add-word", name: "Добавить слово", callback: () => this.openAddWord() });
     this.addCommand({ id: "import-book", name: "Загрузить книгу (EPUB/PDF)", callback: () => new ImportBookModal(this.app, this.settings).open() });
