@@ -103,9 +103,26 @@ function clean(src: string, examples: Example[]): string {
 function shortTranslation(meanings: Meaning[]): string {
   const picks: string[] = [];
   for (const m of meanings.slice(0, 3)) {
-    const best = m.text.split(";").map((x) => x.trim()).filter(Boolean).sort((a, b) => a.length - b.length)[0];
+    const best = splitTopLevel(m.text, ";").map((x) => x.trim()).filter(Boolean).sort((a, b) => a.length - b.length)[0];
     if (best && !picks.includes(best)) picks.push(best);
     if (picks.join("; ").length > 40) break;
   }
   return picks.join("; ");
+}
+
+/** Splits on `sep` only outside parentheses. */
+function splitTopLevel(s: string, sep: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let cur = "";
+  for (const ch of s) {
+    if (ch === "(") depth++;
+    else if (ch === ")") depth = Math.max(0, depth - 1);
+    if (ch === sep && depth === 0) {
+      out.push(cur);
+      cur = "";
+    } else cur += ch;
+  }
+  out.push(cur);
+  return out;
 }

@@ -81,3 +81,14 @@ describe("tatoeba", () => {
     expect(parseTatoeba(null)).toEqual([]);
   });
 });
+
+describe("wiktionary short translation", () => {
+  it("does not split inside parentheses", () => {
+    const s = parseWiktionary(wikitextOf(fx("wiktionary-serendipity.json")));
+    const opens = (s.translation!.match(/\(/g) ?? []).length;
+    const closes = (s.translation!.match(/\)/g) ?? []).length;
+    expect(opens).toBe(closes);
+    expect(s.translation!.startsWith(")")).toBe(false);
+    expect(s.translation!).not.toMatch(/^[^(]*\)/);
+  });
+});
