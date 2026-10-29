@@ -1,8 +1,3 @@
-import { App, Editor, Notice, TFile } from "obsidian";
-import type { Settings } from "../settings";
-import { AddWordModal } from "../ui/AddWordModal";
-import { bookDict } from "../vault/dictionary";
-
 const BOUNDARY = /[.!?…]/;
 
 /** The sentence around [start, end) — bounded by .!?… or a line break; markdown emphasis removed. */
@@ -27,43 +22,4 @@ export function bookOfPath(booksFolder: string, path: string): string | null {
   if (!path.startsWith(prefix)) return null;
   const rest = path.slice(prefix.length);
   return rest.includes("/") ? rest.split("/")[0] : null;
-}
-
-const newId = () => `w-${Math.random().toString(36).slice(2, 8)}`;
-
-export function captureFromEditor(app: App, s: Settings, editor: Editor, file: TFile): void {
-  const book = bookOfPath(s.booksFolder, file.path);
-  const word = editor.getSelection().trim();
-  if (!book) return void new Notice("Откройте главу книги из папки «Книги»");
-  if (!word) return void new Notice("Выделите слово в тексте");
-  const from = editor.getCursor("from");
-  const to = editor.getCursor("to");
-  const lineText = editor.getLine(from.line);
-  const quote = sentenceAround(lineText, from.ch, from.line === to.line ? to.ch : lineText.length);
-  let link: string;
-  if (/^#{1,6}\s/.test(lineText)) {
-    link = `[[${file.path.replace(/\.md$/, "")}#${lineText.replace(/^#+\s*/, "")}|${book}: ${file.basename}]]`;
-  } else {
-    const { line, id } = withBlockId(lineText, newId());
-    if (line !== lineText) editor.setLine(from.line, line);
-    link = `[[${file.path.replace(/\.md$/, "")}#^${id}|${book}: ${file.basename}]]`;
-  }
-  new AddWordModal(app, { word, dict: bookDict(s, book), sourceLink: link, quote }).open();
-}
-
-export function captureFromPdf(app: App, s: Settings, file: TFile): void {
-  const book = bookOfPath(s.booksFolder, file.path);
-  if (!book) return void new Notice("Этот PDF не загружен как книга (папка «Книги»)");
-  const sel = window.getSelection();
-  const word = sel?.toString().trim() ?? "";
-  if (!word) return void new Notice("Выделите слово в PDF");
-  const node = sel?.anchorNode;
-  const el = (node instanceof Element ? node : node?.parentElement) ?? null;
-  const pageEl = el?.closest("[data-page-number]");
-  const page = pageEl?.getAttribute("data-page-number") ?? "";
-  const pageText = (pageEl?.querySelector(".textLayer") ?? pageEl)?.textContent ?? "";
-  const i = pageText.indexOf(word);
-  const quote = i >= 0 ? sentenceAround(pageText, i, i + word.length) : word;
-  const link = page ? `[[${file.path}#page=${page}|${book}, с. ${page}]]` : `[[${file.path}|${book}]]`;
-  new AddWordModal(app, { word, dict: bookDict(s, book), sourceLink: link, quote }).open();
 }

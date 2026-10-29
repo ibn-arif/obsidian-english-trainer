@@ -148,3 +148,20 @@
   font-size: 20px;
   margin: 12px 0;
 }
+
+/* floating «+ в словарь» button next to a selection */
+.et-sel-btn {
+  position: fixed;
+  z-index: var(--layer-popover, 30);
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 18px;
+  font-size: 15px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-s);
+}
+.is-mobile .et-sel-btn {
+  min-height: 44px;
+  font-size: 16px;
+}

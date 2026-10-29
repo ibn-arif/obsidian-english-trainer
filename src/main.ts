@@ -1,13 +1,17 @@
-import { Editor, MarkdownView, Notice, Plugin, TAbstractFile, TFile, debounce } from "obsidian";
+import { MarkdownView, Notice, Plugin, TAbstractFile, TFile, debounce } from "obsidian";
 import { DEFAULT_SETTINGS, SettingsTab, type Settings } from "./settings";
 import { AddWordModal } from "./ui/AddWordModal";
 import { ImportBookModal } from "./ui/ImportBookModal";
 import { QuizView, VIEW_TYPE_QUIZ } from "./ui/QuizView";
-import { bookOfPath, captureFromEditor, captureFromPdf } from "./books/capture";
+import { bookOfPath } from "./books/capture";
+import { captureSnapshot, takeSnapshot, type Snapshot } from "./books/selection";
+import { SelectionButton } from "./ui/SelectionButton";
 import { bookDict, generalDict, rebuildIndex, type DictRef } from "./vault/dictionary";
 
 export default class EnglishTrainerPlugin extends Plugin {
   settings: Settings = { ...DEFAULT_SETTINGS };
+  private lastSnapshot: Snapshot | null = null;
+  private selectionButton: SelectionButton | null = null;
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -23,7 +27,11 @@ export default class EnglishTrainerPlugin extends Plugin {
     this.addCommand({
       id: "add-selection-general",
       name: "Добавить выделенное в общий словарь",
-      editorCallback: (editor: Editor) => this.openAddWord(editor.getSelection()),
+      callback: () => {
+        const snap = this.currentSnapshot();
+        if (snap) this.openAddWord(snap.word);
+        else new Notice("Сначала выделите слово");
+      },
     });
     this.addCommand({
       id: "add-selection-book",
@@ -36,11 +44,29 @@ export default class EnglishTrainerPlugin extends Plugin {
         if (!sel || sel.length > 60) return;
         const file = info.file;
         if (file && bookOfPath(this.settings.booksFolder, file.path)) {
-          menu.addItem((i) => i.setTitle(`В словарь книги: «${sel}»`).setIcon("book-open").onClick(() => captureFromEditor(this.app, this.settings, editor, file)));
+          const snap = this.currentSnapshot();
+          if (snap) menu.addItem((i) => i.setTitle(`В словарь книги: «${sel}»`).setIcon("book-open").onClick(() => void captureSnapshot(this.app, this.settings, snap)));
         }
         menu.addItem((i) => i.setTitle(`В общий словарь: «${sel}»`).setIcon("languages").onClick(() => this.openAddWord(sel)));
       }),
     );
+
+    // floating «+ в словарь» button next to any selection in a note or PDF
+    const button = new SelectionButton(() => {
+      const snap = this.lastSnapshot;
+      button.hide();
+      if (snap) void captureSnapshot(this.app, this.settings, snap);
+    });
+    this.selectionButton = button;
+    const onSelection = debounce(() => {
+      const snap = takeSnapshot(this.app);
+      if (!snap?.rect) return button.hide();
+      this.lastSnapshot = snap;
+      const inBook = bookOfPath(this.settings.booksFolder, snap.file.path);
+      button.show(snap.rect, inBook ? "+ в словарь книги" : "+ в словарь");
+    }, 250, true);
+    this.registerDomEvent(document, "selectionchange", onSelection);
+    this.registerDomEvent(document, "scroll", () => button.hide(), { capture: true });
 
     // keep dictionary indexes in sync when cards are deleted or renamed
     const pending = new Map<string, DictRef>();
@@ -72,11 +98,17 @@ export default class EnglishTrainerPlugin extends Plugin {
   }
 
   captureFromBook(): void {
-    const md = this.activeMarkdown();
-    if (md?.file) return captureFromEditor(this.app, this.settings, md.editor, md.file);
-    const file = this.app.workspace.getActiveFile();
-    if (file?.extension === "pdf") return captureFromPdf(this.app, this.settings, file);
-    new Notice("Откройте главу или PDF книги и выделите слово");
+    const snap = this.currentSnapshot();
+    if (!snap) return void new Notice("Сначала выделите слово в книге");
+    if (!bookOfPath(this.settings.booksFolder, snap.file.path)) return void new Notice("Это не книга из папки «Книги» — слово можно добавить в общий словарь");
+    void captureSnapshot(this.app, this.settings, snap);
+  }
+
+  /** The live selection, or the one remembered within the last minute (palettes and menus clear selections). */
+  currentSnapshot(): Snapshot | null {
+    const live = takeSnapshot(this.app);
+    if (live) return live;
+    return this.lastSnapshot && Date.now() - this.lastSnapshot.at < 60_000 ? this.lastSnapshot : null;
   }
 
   /** Dictionary a card path belongs to, if any. */
@@ -93,6 +125,10 @@ export default class EnglishTrainerPlugin extends Plugin {
 
   activeMarkdown(): MarkdownView | null {
     return this.app.workspace.getActiveViewOfType(MarkdownView);
+  }
+
+  onunload(): void {
+    this.selectionButton?.destroy();
   }
 
   async loadSettings(): Promise<void> {
