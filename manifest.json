@@ -1,0 +1,9 @@
+{
+  "id": "english-trainer",
+  "name": "English Trainer",
+  "version": "0.1.0",
+  "minAppVersion": "1.9.0",
+  "description": "Перевод английских слов, словари, режим чтения книг и заучивание с интервальным повторением.",
+  "author": "ibn-arif",
+  "isDesktopOnly": false
+}

@@ -1,0 +1,26 @@
+{
+  "name": "obsidian-english-trainer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "English words: auto-translate, dictionaries, books, spaced-repetition quizzes",
+  "main": "main.js",
+  "scripts": {
+    "build": "tsc --noEmit && node esbuild.config.mjs production",
+    "dev": "node esbuild.config.mjs",
+    "test": "vitest run",
+    "deploy": "npm run build && node scripts/deploy.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "jszip": "^3.10.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "builtin-modules": "^5.4.0",
+    "esbuild": "^0.28.2",
+    "jsdom": "^29.1.1",
+    "obsidian": "^1.14.4",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}
