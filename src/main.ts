@@ -2,6 +2,7 @@ import { Editor, MarkdownView, Notice, Plugin, TAbstractFile, TFile, debounce } 
 import { DEFAULT_SETTINGS, SettingsTab, type Settings } from "./settings";
 import { AddWordModal } from "./ui/AddWordModal";
 import { ImportBookModal } from "./ui/ImportBookModal";
+import { QuizView, VIEW_TYPE_QUIZ } from "./ui/QuizView";
 import { bookOfPath, captureFromEditor, captureFromPdf } from "./books/capture";
 import { bookDict, generalDict, rebuildIndex, type DictRef } from "./vault/dictionary";
 
@@ -12,7 +13,10 @@ export default class EnglishTrainerPlugin extends Plugin {
     await this.loadSettings();
     this.addSettingTab(new SettingsTab(this.app, this));
 
+    this.registerView(VIEW_TYPE_QUIZ, (leaf) => new QuizView(leaf, () => this.settings));
     this.addRibbonIcon("languages", "Добавить английское слово", () => this.openAddWord());
+    this.addRibbonIcon("graduation-cap", "Заучивание слов", () => void this.openQuiz());
+    this.addCommand({ id: "open-quiz", name: "Заучивание", callback: () => void this.openQuiz() });
     this.addCommand({ id: "add-word", name: "Добавить слово", callback: () => this.openAddWord() });
     this.addCommand({ id: "import-book", name: "Загрузить книгу (EPUB/PDF)", callback: () => new ImportBookModal(this.app, this.settings).open() });
     this.addCommand({
@@ -57,6 +61,13 @@ export default class EnglishTrainerPlugin extends Plugin {
 
   openAddWord(word?: string, dict: DictRef = generalDict(this.settings)): void {
     new AddWordModal(this.app, { word: word?.trim() || undefined, dict }).open();
+  }
+
+  async openQuiz(): Promise<void> {
+    const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_QUIZ)[0];
+    const leaf = existing ?? this.app.workspace.getLeaf(true);
+    if (!existing) await leaf.setViewState({ type: VIEW_TYPE_QUIZ, active: true });
+    this.app.workspace.revealLeaf(leaf);
   }
 
   captureFromBook(): void {

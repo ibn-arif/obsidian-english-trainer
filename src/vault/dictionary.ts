@@ -167,3 +167,16 @@ export function bookTitles(app: App, s: Settings): string[] {
   const children = (root as { children?: { name: string; children?: unknown }[] } | null)?.children ?? [];
   return children.filter((c) => c.children).map((c) => c.name).sort();
 }
+
+/** Writes the new SRS state and status into the card's frontmatter. */
+export async function saveReview(app: App, card: CardInfo, next: SrsState, status: string): Promise<void> {
+  await app.fileManager.processFrontMatter(card.file, (f: Record<string, unknown>) => {
+    f.due = next.due;
+    f.interval = next.interval;
+    f.ease = next.ease;
+    f.reps = next.reps;
+    f.lapses = next.lapses;
+    f.status = status;
+  });
+  card.srs = next;
+}
