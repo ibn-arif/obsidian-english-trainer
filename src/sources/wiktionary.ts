@@ -43,7 +43,7 @@ export function parseWiktionary(wikitext: string): Partial<WordEntry> {
   }
   if (meanings.length) {
     out.meanings = meanings;
-    out.translation = meanings.slice(0, 3).map((m) => m.text).join("; ");
+    out.translation = shortTranslation(meanings);
     out.examples = meanings.flatMap((m) => m.examples);
   }
 
@@ -97,4 +97,15 @@ function clean(src: string, examples: Example[]): string {
     });
   }
   return s.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").replace(/\s+([,;.)])/g, "$1").replace(/[;,\s]+$/, "").trim();
+}
+
+/** Shortest `;`-separated variant of each of the first meanings, e.g. «сопротивляющийся; неохотный». */
+function shortTranslation(meanings: Meaning[]): string {
+  const picks: string[] = [];
+  for (const m of meanings.slice(0, 3)) {
+    const best = m.text.split(";").map((x) => x.trim()).filter(Boolean).sort((a, b) => a.length - b.length)[0];
+    if (best && !picks.includes(best)) picks.push(best);
+    if (picks.join("; ").length > 40) break;
+  }
+  return picks.join("; ");
 }

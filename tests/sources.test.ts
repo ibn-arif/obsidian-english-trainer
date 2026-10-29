@@ -22,7 +22,7 @@ describe("wiktionary", () => {
     });
   });
   it("builds a short translation and synonyms", () => {
-    expect(r.translation).toContain("неохотный");
+    expect(r.translation).toBe("сопротивляющийся; неохотный");
     expect(r.synonyms).toContain("unwilling");
   });
   it("phrasal verb: pos and empty examples skipped", () => {
