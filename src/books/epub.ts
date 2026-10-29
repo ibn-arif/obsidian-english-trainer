@@ -1,4 +1,4 @@
-import JSZip from "jszip";
+import { strFromU8, unzipSync } from "fflate";
 
 export interface EpubBook {
   title: string;
@@ -11,11 +11,11 @@ const SKIP = /nav|cover|toc/i;
 
 /** EPUB → metadata + spine chapters (body HTML). Throws on a broken file. */
 export async function parseEpub(data: ArrayBuffer): Promise<EpubBook> {
-  const zip = await JSZip.loadAsync(data);
-  const container = await text(zip, "META-INF/container.xml");
+  const zip = unzipSync(new Uint8Array(data));
+  const container = text(zip, "META-INF/container.xml");
   const opfPath = xml(container).querySelector("rootfile")?.getAttribute("full-path");
   if (!opfPath) throw new Error("EPUB: нет rootfile в container.xml");
-  const opf = xml(await text(zip, opfPath));
+  const opf = xml(text(zip, opfPath));
   const base = opfPath.includes("/") ? opfPath.slice(0, opfPath.lastIndexOf("/") + 1) : "";
 
   const meta = (tag: string) => opf.getElementsByTagNameNS("http://purl.org/dc/elements/1.1/", tag)[0]?.textContent?.trim() ?? "";
@@ -29,9 +29,9 @@ export async function parseEpub(data: ArrayBuffer): Promise<EpubBook> {
     const id = ref.getAttribute("idref") ?? "";
     const item = items.get(id);
     if (!item || SKIP.test(id) || SKIP.test(item.href) || /nav/.test(item.props)) continue;
-    const file = zip.file(resolve(base, decodeURIComponent(item.href)));
+    const file = zip[resolve(base, decodeURIComponent(item.href))];
     if (!file) continue;
-    const doc = new DOMParser().parseFromString(await file.async("string"), "application/xhtml+xml");
+    const doc = new DOMParser().parseFromString(strFromU8(file), "application/xhtml+xml");
     const body = doc.getElementsByTagName("body")[0];
     if (!body || (body.textContent ?? "").trim().length < MIN_CHAPTER_CHARS) continue;
     const heading = body.querySelector("h1, h2, h3")?.textContent?.replace(/\s+/g, " ").trim();
@@ -40,10 +40,10 @@ export async function parseEpub(data: ArrayBuffer): Promise<EpubBook> {
   return { title: meta("title") || "Без названия", author: meta("creator"), chapters };
 }
 
-async function text(zip: JSZip, path: string): Promise<string> {
-  const f = zip.file(path);
+function text(zip: Record<string, Uint8Array>, path: string): string {
+  const f = zip[path];
   if (!f) throw new Error(`EPUB: нет файла ${path}`);
-  return f.async("string");
+  return strFromU8(f);
 }
 
 function xml(s: string): Document {

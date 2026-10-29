@@ -1,11 +1,11 @@
-import JSZip from "jszip";
+import { unzipSync } from "fflate";
 import type { EpubBook } from "./epub";
 
 const MIN_CHAPTER_CHARS = 200;
 
 /** FB2 / FB2.ZIP → metadata + chapters (HTML). Handles windows-1251 and other declared encodings. */
 export async function parseFb2(data: ArrayBuffer, fileName: string): Promise<EpubBook> {
-  const doc = new DOMParser().parseFromString(decode(await unzipIfNeeded(data, fileName)), "application/xml");
+  const doc = new DOMParser().parseFromString(decode(unzipIfNeeded(data, fileName)), "application/xml");
   const root = doc.documentElement;
   if (!root || root.localName !== "FictionBook" || doc.getElementsByTagName("parsererror").length) {
     throw new Error("Не удалось прочитать FB2: файл повреждён или это не FB2");
@@ -31,14 +31,14 @@ export async function parseFb2(data: ArrayBuffer, fileName: string): Promise<Epu
   return { title, author, chapters };
 }
 
-async function unzipIfNeeded(data: ArrayBuffer, fileName: string): Promise<Uint8Array> {
+function unzipIfNeeded(data: ArrayBuffer, fileName: string): Uint8Array {
   const bytes = new Uint8Array(data);
   const isZip = bytes[0] === 0x50 && bytes[1] === 0x4b; // "PK"
   if (!isZip && !/\.zip$/i.test(fileName)) return bytes;
-  const zip = await JSZip.loadAsync(data);
-  const entry = Object.values(zip.files).find((f) => !f.dir && /\.fb2$/i.test(f.name));
-  if (!entry) throw new Error("В архиве нет файла .fb2 (FB2)");
-  return entry.async("uint8array");
+  const files = unzipSync(bytes);
+  const name = Object.keys(files).find((n) => /\.fb2$/i.test(n));
+  if (!name) throw new Error("В архиве нет файла .fb2 (FB2)");
+  return files[name];
 }
 
 function decode(bytes: Uint8Array): string {

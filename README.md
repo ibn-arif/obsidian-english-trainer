@@ -66,5 +66,5 @@ Releases: `npm version x.y.z`, then push the tag; the GitHub workflow builds and
 ## Credits and licenses
 
 - Word data comes from [Wiktionary](https://ru.wiktionary.org) ([CC BY-SA](https://creativecommons.org/licenses/by-sa/4.0/)), [Tatoeba](https://tatoeba.org) ([CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/)), the [Free Dictionary API](https://dictionaryapi.dev) (Wiktionary data, CC BY-SA) and [MyMemory](https://mymemory.translated.net/doc/terms.php). Content copied into your notes keeps those licenses.
-- Bundles [JSZip](https://stuk.github.io/jszip/) (MIT) to read EPUB and zipped FB2 files.
+- Bundles [fflate](https://github.com/101arrowz/fflate) (MIT) to read EPUB and zipped FB2 files.
 - The plugin itself is released under the [MIT License](./LICENSE).
