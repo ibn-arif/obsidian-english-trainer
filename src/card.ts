@@ -40,6 +40,7 @@ export function renderCard(e: WordEntry, o: CardOptions): string {
   const meta = [e.transcription && `\`${e.transcription}\``, e.pos && `*${e.pos}*`, e.audio && `[🔊 произношение](${e.audio})`].filter(Boolean);
   if (meta.length) b.push(meta.join(" · "), "");
   b.push(`**Перевод:** ${e.translation || "—"}`, "");
+  if (e.lemma) b.push(`**Начальная форма:** ${e.lemma}`, "");
   if (e.meanings.length) {
     b.push("## Значения");
     e.meanings.forEach((m, i) => {

@@ -92,3 +92,31 @@ describe("wiktionary short translation", () => {
     expect(s.translation!).not.toMatch(/^[^(]*\)/);
   });
 });
+
+describe("wiktionary: real-world quirks", () => {
+  it("part of speech is the first one in the article", () => {
+    expect(parseWiktionary(wikitextOf(fx("wiktionary-book.json"))).pos).toBe("существительное");
+  });
+  it("a «Нужен перевод» placeholder gives no meaning", () => {
+    const s = parseWiktionary(wikitextOf(fx("wiktionary-shambling.json")));
+    expect(s.meanings ?? []).toEqual([]);
+    expect(s.translation ?? "").toBe("");
+  });
+});
+
+describe("wiktionary examples with named parameters", () => {
+  it("reads {{пример|текст=…|перевод=…}}", () => {
+    const w = "= {{-en-}} =\n==== Значение ====\n# [[смотреть]] {{пример|текст=Look at my car!|перевод=Посмотри на мою машину!}}\n";
+    expect(parseWiktionary(w).examples).toEqual([{ en: "Look at my car!", ru: "Посмотри на мою машину!" }]);
+  });
+});
+
+describe("tatoeba keeps only sentences with the word", () => {
+  it("drops look-alike words", () => {
+    const json = { data: [
+      { text: "Our country is in shambles.", translations: [{ lang: "rus", text: "Страна в руинах." }] },
+      { text: "He came shambling down the road.", translations: [{ lang: "rus", text: "Он плёлся по дороге." }] },
+    ] };
+    expect(parseTatoeba(json, "shambling")).toEqual([{ en: "He came shambling down the road.", ru: "Он плёлся по дороге." }]);
+  });
+});

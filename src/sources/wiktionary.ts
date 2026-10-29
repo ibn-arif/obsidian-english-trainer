@@ -28,10 +28,12 @@ export function parseWiktionary(wikitext: string): Partial<WordEntry> {
   const tr = /\{\{transcriptions?\|([^|}]+)/.exec(en);
   if (tr && tr[1].trim()) out.transcription = `/${tr[1].trim()}/`;
 
+  let bestAt = Infinity;
   for (const [re, name] of POS_TEMPLATES) {
-    if (re.test(en)) {
+    const m = re.exec(en);
+    if (m && m.index < bestAt) {
+      bestAt = m.index;
       out.pos = name;
-      break;
     }
   }
 
@@ -63,17 +65,21 @@ function englishSection(text: string): string {
   return next < 0 ? rest : rest.slice(0, next + 8);
 }
 
-/** `# …` lines (not `#:` continuations) of a `==== Name ====` section. */
+/** `# …` lines (not `#:` continuations) of every `==== Name ====` section (homonyms have one each). */
 function sectionLines(en: string, name: string): string[] {
-  const re = new RegExp(`^====\\s*${name}\\s*====\\s*$`, "m");
-  const m = re.exec(en);
-  if (!m) return [];
-  const body = en.slice(m.index + m[0].length);
-  const end = body.search(/^=+[^=\n]+=+\s*$/m);
-  return (end < 0 ? body : body.slice(0, end))
-    .split("\n")
-    .filter((l) => /^#(?![:*])/.test(l))
-    .map((l) => l.replace(/^#\s*/, ""));
+  const re = new RegExp(`^====\\s*${name}\\s*====\\s*$`, "gm");
+  const out: string[] = [];
+  for (const m of en.matchAll(re)) {
+    const body = en.slice((m.index ?? 0) + m[0].length);
+    const end = body.search(/^=+[^=\n]+=+\s*$/m);
+    out.push(
+      ...(end < 0 ? body : body.slice(0, end))
+        .split("\n")
+        .filter((l) => /^#(?![:*])/.test(l))
+        .map((l) => l.replace(/^#\s*/, "")),
+    );
+  }
+  return out;
 }
 
 /** Removes markup; collects `{{пример|EN|перевод=RU}}` into `examples`. */
@@ -89,7 +95,8 @@ function clean(src: string, examples: Example[]): string {
       const name = parts[0].trim();
       if (name === "выдел" || name === "w") return parts[parts.length - 1] ?? "";
       if (name === "пример") {
-        const en = (parts[1] ?? "").trim();
+        const named = parts.find((p) => p.startsWith("текст="))?.slice("текст=".length);
+        const en = (named ?? (parts[1]?.includes("=") ? "" : parts[1]) ?? "").trim();
         const ru = parts.find((p) => p.startsWith("перевод="))?.slice("перевод=".length).trim();
         if (en) examples.push(ru ? { en, ru } : { en });
       }

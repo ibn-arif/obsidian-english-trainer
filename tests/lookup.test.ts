@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { lookupWord, normalizeWord } from "../src/sources/lookup";
+import { lookupWord, normalizeWord, lemmaCandidates } from "../src/sources/lookup";
 import type { Http } from "../src/http";
 
 const raw = (n: string) => readFileSync(`tests/fixtures/${n}`, "utf8");
@@ -26,6 +26,10 @@ describe("normalizeWord", () => {
     expect(normalizeWord("“Paul!”")).toBe("paul");
     expect(normalizeWord("(don't)")).toBe("don't");
     expect(normalizeWord("well-known.")).toBe("well-known");
+  });
+  it("folds PDF ligatures and typographic apostrophes", () => {
+    expect(normalizeWord("ﬁre")).toBe("fire");
+    expect(normalizeWord("wasn’t")).toBe("wasn't");
   });
 });
 
@@ -74,5 +78,37 @@ describe("lookupWord", () => {
       fakeHttp({ "ru.wiktionary.org": raw("wiktionary-reluctant.json"), "tatoeba.org": tatoeba }),
     );
     expect(e.examples.filter((x) => x.en.startsWith("They dragged"))).toHaveLength(1);
+  });
+
+  it("falls back to the base form when the word itself has no translation", async () => {
+    const e = await lookupWord(
+      "shambling",
+      fakeHttp({
+        "page=shambling": raw("wiktionary-shambling.json"),
+        "page=shamble": raw("wiktionary-shamble.json"),
+        "mymemory": JSON.stringify({ responseData: { translatedText: "shambling" } }),
+        "entries/en/shambling": raw("dictapi-shambling.json"),
+      }),
+    );
+    expect(e.translation).toContain("волочить ноги");
+    expect(e.lemma).toBe("shamble");
+  });
+
+  it("shows the English definition when no Russian translation exists anywhere", async () => {
+    const e = await lookupWord("shambling", fakeHttp({ "entries/en/shambling": raw("dictapi-shambling.json") }));
+    expect(e.translation).toBe("");
+    expect(e.meanings[0].text).toBe("EN: To walk while shuffling or dragging the feet.");
+  });
+});
+
+describe("lemmaCandidates", () => {
+  it("guesses base forms of inflected words", () => {
+    expect(lemmaCandidates("shambling")).toContain("shamble");
+    expect(lemmaCandidates("running")).toContain("run");
+    expect(lemmaCandidates("studies")).toContain("study");
+    expect(lemmaCandidates("brooded")).toContain("brood");
+    expect(lemmaCandidates("tried")).toContain("try");
+    expect(lemmaCandidates("trees")).toContain("tree");
+    expect(lemmaCandidates("cat")).toEqual([]);
   });
 });

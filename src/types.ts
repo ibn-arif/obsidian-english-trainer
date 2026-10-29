@@ -17,6 +17,8 @@ export interface WordEntry {
   synonyms: string[];
   examples: Example[];
   audio?: string;
+  /** base form the translation was taken from, e.g. shamble for shambling */
+  lemma?: string;
 }
 
 export interface SrsState {

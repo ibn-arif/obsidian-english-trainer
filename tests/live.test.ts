@@ -9,7 +9,7 @@ const fetchHttp: Http = async (url) => {
 };
 
 describe.runIf(process.env.LIVE === "1")("live lookup", () => {
-  for (const w of ["reluctant", "give up", "went", "serendipity"]) {
+  for (const w of (process.env.WORDS ?? "reluctant,give up,went,serendipity").split(",")) {
     it(w, async () => {
       const e = await lookupWord(w, fetchHttp);
       console.log(JSON.stringify({ w, tr: e.translation, pos: e.pos, ts: e.transcription, ex: e.examples.map((x) => x.en).slice(0, 2) }, null, 0));
