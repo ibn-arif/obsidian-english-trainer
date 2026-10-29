@@ -1,8 +1,9 @@
-import { Editor, MarkdownView, Plugin, TAbstractFile, TFile, debounce } from "obsidian";
+import { Editor, MarkdownView, Notice, Plugin, TAbstractFile, TFile, debounce } from "obsidian";
 import { DEFAULT_SETTINGS, SettingsTab, type Settings } from "./settings";
 import { AddWordModal } from "./ui/AddWordModal";
 import { ImportBookModal } from "./ui/ImportBookModal";
-import { generalDict, rebuildIndex, type DictRef } from "./vault/dictionary";
+import { bookOfPath, captureFromEditor, captureFromPdf } from "./books/capture";
+import { bookDict, generalDict, rebuildIndex, type DictRef } from "./vault/dictionary";
 
 export default class EnglishTrainerPlugin extends Plugin {
   settings: Settings = { ...DEFAULT_SETTINGS };
@@ -19,11 +20,20 @@ export default class EnglishTrainerPlugin extends Plugin {
       name: "Добавить выделенное в общий словарь",
       editorCallback: (editor: Editor) => this.openAddWord(editor.getSelection()),
     });
+    this.addCommand({
+      id: "add-selection-book",
+      name: "Добавить выделенное в словарь книги",
+      callback: () => this.captureFromBook(),
+    });
     this.registerEvent(
-      this.app.workspace.on("editor-menu", (menu, editor) => {
+      this.app.workspace.on("editor-menu", (menu, editor, info) => {
         const sel = editor.getSelection().trim();
         if (!sel || sel.length > 60) return;
-        menu.addItem((i) => i.setTitle(`В словарь: «${sel}»`).setIcon("languages").onClick(() => this.openAddWord(sel)));
+        const file = info.file;
+        if (file && bookOfPath(this.settings.booksFolder, file.path)) {
+          menu.addItem((i) => i.setTitle(`В словарь книги: «${sel}»`).setIcon("book-open").onClick(() => captureFromEditor(this.app, this.settings, editor, file)));
+        }
+        menu.addItem((i) => i.setTitle(`В общий словарь: «${sel}»`).setIcon("languages").onClick(() => this.openAddWord(sel)));
       }),
     );
 
@@ -49,10 +59,23 @@ export default class EnglishTrainerPlugin extends Plugin {
     new AddWordModal(this.app, { word: word?.trim() || undefined, dict }).open();
   }
 
+  captureFromBook(): void {
+    const md = this.activeMarkdown();
+    if (md?.file) return captureFromEditor(this.app, this.settings, md.editor, md.file);
+    const file = this.app.workspace.getActiveFile();
+    if (file?.extension === "pdf") return captureFromPdf(this.app, this.settings, file);
+    new Notice("Откройте главу или PDF книги и выделите слово");
+  }
+
   /** Dictionary a card path belongs to, if any. */
   dictForPath(path: string): DictRef | null {
     const g = generalDict(this.settings);
     if (path.startsWith(g.folder + "/")) return g;
+    const book = bookOfPath(this.settings.booksFolder, path);
+    if (book) {
+      const d = bookDict(this.settings, book);
+      if (path.startsWith(d.folder + "/")) return d;
+    }
     return null;
   }
 
