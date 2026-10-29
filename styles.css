@@ -75,6 +75,7 @@
 }
 .et-progress-fill {
   height: 100%;
+  width: var(--et-progress, 0%);
   background: var(--interactive-accent);
 }
 .et-card {
@@ -124,12 +125,14 @@
 .et-row-wide .et-btn {
   flex: 1;
 }
-.et-right {
-  background: rgba(var(--color-green-rgb), 0.25) !important;
+.et-quiz .et-btn.et-right,
+.et-quiz .et-feedback.et-right {
+  background: rgba(var(--color-green-rgb), 0.25);
   color: var(--text-normal);
 }
-.et-wrong {
-  background: rgba(var(--color-red-rgb), 0.25) !important;
+.et-quiz .et-btn.et-wrong,
+.et-quiz .et-feedback.et-wrong {
+  background: rgba(var(--color-red-rgb), 0.25);
   color: var(--text-normal);
 }
 .et-feedback {
@@ -152,6 +155,8 @@
 /* floating «+ в словарь» button next to a selection */
 .et-sel-btn {
   position: fixed;
+  left: var(--et-sel-left, 0);
+  top: var(--et-sel-top, 0);
   z-index: var(--layer-popover, 30);
   min-height: 36px;
   padding: 0 14px;

@@ -20,10 +20,10 @@ export default class EnglishTrainerPlugin extends Plugin {
     this.registerView(VIEW_TYPE_QUIZ, (leaf) => new QuizView(leaf, () => this.settings));
     this.addRibbonIcon("languages", "Добавить английское слово", () => this.openAddWord());
     this.addRibbonIcon("graduation-cap", "Заучивание слов", () => void this.openQuiz());
-    this.addRibbonIcon("book-plus", "Загрузить книгу (EPUB/FB2/PDF)", () => new ImportBookModal(this.app, this.settings).open());
+    this.addRibbonIcon("book-plus", "Загрузить книгу", () => new ImportBookModal(this.app, this.settings).open());
     this.addCommand({ id: "open-quiz", name: "Заучивание", callback: () => void this.openQuiz() });
     this.addCommand({ id: "add-word", name: "Добавить слово", callback: () => this.openAddWord() });
-    this.addCommand({ id: "import-book", name: "Загрузить книгу (EPUB/FB2/PDF)", callback: () => new ImportBookModal(this.app, this.settings).open() });
+    this.addCommand({ id: "import-book", name: "Загрузить книгу", callback: () => new ImportBookModal(this.app, this.settings).open() });
     this.addCommand({
       id: "add-selection-general",
       name: "Добавить выделенное в общий словарь",
@@ -94,7 +94,7 @@ export default class EnglishTrainerPlugin extends Plugin {
     const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_QUIZ)[0];
     const leaf = existing ?? this.app.workspace.getLeaf(true);
     if (!existing) await leaf.setViewState({ type: VIEW_TYPE_QUIZ, active: true });
-    this.app.workspace.revealLeaf(leaf);
+    await this.app.workspace.revealLeaf(leaf);
   }
 
   captureFromBook(): void {
@@ -132,7 +132,8 @@ export default class EnglishTrainerPlugin extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    this.settings = { ...DEFAULT_SETTINGS, ...(await this.loadData()) };
+    const saved = (await this.loadData()) as Partial<Settings> | null;
+    this.settings = { ...DEFAULT_SETTINGS, ...(saved ?? {}) };
   }
 
   async saveSettings(): Promise<void> {

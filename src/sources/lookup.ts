@@ -47,7 +47,7 @@ export async function lookupWord(word: string, http: Http): Promise<WordEntry> {
 
   if (!e.translation) {
     for (const cand of lemmaCandidates(word).slice(0, 4)) {
-      const lw = safe(() => ({}) as Partial<WordEntry>);
+      const lw: Partial<WordEntry> = {};
       try {
         Object.assign(lw, parseWiktionary(wikitextOf(await getJson(http, wiktionaryUrl(cand)))));
       } catch {

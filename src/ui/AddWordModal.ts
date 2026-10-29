@@ -63,19 +63,19 @@ export class AddWordModal extends Modal {
     contentEl.empty();
     contentEl.createEl("h3", { text: e.word, cls: "et-word" });
     const meta = [e.transcription, e.pos].filter(Boolean).join(" · ");
-    if (meta) contentEl.createEl("div", { text: meta, cls: "et-muted" });
+    if (meta) contentEl.createDiv({ text: meta, cls: "et-muted" });
     if (!e.translation) contentEl.createEl("p", { text: "Перевод не найден (нет сети или слова нет в словарях). Впишите его сами.", cls: "et-warn" });
     new Setting(contentEl).setName("Перевод").addTextArea((t) => {
       t.setValue(e.translation).onChange((v) => (e.translation = v.trim()));
       t.inputEl.addClass("et-textarea");
     });
     if (e.meanings.length) {
-      contentEl.createEl("div", { text: "Значения", cls: "et-label" });
+      contentEl.createDiv({ text: "Значения", cls: "et-label" });
       const ol = contentEl.createEl("ol", { cls: "et-list" });
       for (const m of e.meanings.slice(0, 6)) ol.createEl("li", { text: m.text });
     }
     if (e.examples.length) {
-      contentEl.createEl("div", { text: "Примеры", cls: "et-label" });
+      contentEl.createDiv({ text: "Примеры", cls: "et-label" });
       const ul = contentEl.createEl("ul", { cls: "et-list" });
       for (const x of e.examples) {
         const li = ul.createEl("li");

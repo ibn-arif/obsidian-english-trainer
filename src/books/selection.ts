@@ -1,4 +1,4 @@
-import { App, Notice, TFile } from "obsidian";
+import { App, MarkdownView, Notice, TFile } from "obsidian";
 import type { Settings } from "../settings";
 import { AddWordModal } from "../ui/AddWordModal";
 import { bookDict, generalDict } from "../vault/dictionary";
@@ -68,10 +68,9 @@ export function takeSnapshot(app: App): Snapshot | null {
   if (pageEl) {
     let pdf: TFile | null = active.extension === "pdf" ? active : null;
     if (!pdf) {
-      const folder = active.parent?.path ?? "";
-      const p = pdfForBook(app.vault.getFiles().map((f) => f.path), folder);
-      const f = p ? app.vault.getAbstractFileByPath(p) : null;
-      pdf = f instanceof TFile ? f : null;
+      const folder = active.parent;
+      const p = folder ? pdfForBook(folder.children.map((c) => c.path), folder.path) : null;
+      pdf = p ? app.vault.getFileByPath(p) : null;
     }
     const pageText = (pageEl.querySelector(".textLayer") ?? pageEl).textContent ?? "";
     // a PDF embedded outside a book: no page link possible — the note itself is the source
@@ -106,11 +105,15 @@ export async function captureSnapshot(app: App, s: Settings, snap: Snapshot): Pr
     } else {
       const { line: withId, id } = withBlockId(line, `w-${Math.random().toString(36).slice(2, 8)}`);
       if (withId !== line) {
-        await app.vault.process(snap.file, (data) => {
-          const ls = data.split("\n");
-          if (ls[idx] === line) ls[idx] = withId;
-          return ls.join("\n");
-        });
+        // the open note goes through the Editor (keeps cursor/folds); a background file through Vault.process
+        const view = app.workspace.getActiveViewOfType(MarkdownView);
+        if (view?.file === snap.file && view.editor.getLine(idx) === line) view.editor.setLine(idx, withId);
+        else
+          await app.vault.process(snap.file, (data) => {
+            const ls = data.split("\n");
+            if (ls[idx] === line) ls[idx] = withId;
+            return ls.join("\n");
+          });
       }
       link = `[[${path}#^${id}|${book}: ${snap.file.basename}]]`;
     }

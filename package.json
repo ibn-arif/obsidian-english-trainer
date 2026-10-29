@@ -2,26 +2,39 @@
   "name": "obsidian-english-trainer",
   "version": "0.1.0",
   "private": true,
-  "description": "English words: auto-translate, dictionaries, books, spaced-repetition quizzes",
+  "description": "Look up English words with Russian translations, transcription and examples, collect them in general and per-book dictionaries from EPUB, FB2 and PDF books, and learn them with spaced repetition quizzes.",
   "main": "main.js",
   "scripts": {
     "build": "tsc --noEmit && node esbuild.config.mjs production",
     "dev": "node esbuild.config.mjs",
     "test": "vitest run",
-    "deploy": "npm run build && node scripts/deploy.mjs"
+    "deploy": "npm run build && node scripts/deploy.mjs",
+    "lint": "eslint src",
+    "version": "node scripts/version-bump.mjs && git add manifest.json versions.json"
   },
   "license": "MIT",
   "dependencies": {
     "jszip": "^3.10.2"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@eslint/json": "^0.14.0",
     "@types/node": "^26.6.6",
     "builtin-modules": "^5.4.0",
     "esbuild": "^0.28.2",
+    "eslint": "^9.39.5",
+    "eslint-plugin-obsidianmd": "^0.4.2",
     "jsdom": "^29.1.1",
     "obsidian": "^1.14.4",
-    "typescript": "^7.0.2",
+    "typescript": "~5.9.0",
+    "typescript-eslint": "^8.72.1",
+    "vite": "^8.3.5",
     "vitest": "^5.0.5",
     "yaml": "^2.9.1"
+  },
+  "author": "ibn-arif",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ibn-arif/obsidian-english-trainer.git"
   }
 }

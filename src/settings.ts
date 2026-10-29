@@ -41,13 +41,13 @@ export class SettingsTab extends PluginSettingTab {
     text("Оглавление общего словаря", "Заметка со списком всех слов", "dictIndex");
     text("Папка книг", "Каждая книга — отдельная папка внутри", "booksFolder");
     new Setting(containerEl).setName("Слов в сессии").setDesc("От 10 до 20").addSlider((sl) =>
-      sl.setLimits(10, 20, 1).setValue(s.sessionSize).setDynamicTooltip().onChange(async (v) => {
+      sl.setLimits(10, 20, 1).setValue(s.sessionSize).onChange(async (v) => {
         s.sessionSize = v;
         await this.host.saveSettings();
       }),
     );
     new Setting(containerEl).setName("Новых слов за сессию").setDesc("Максимум новых слов в одной сессии").addSlider((sl) =>
-      sl.setLimits(1, 20, 1).setValue(s.maxNew).setDynamicTooltip().onChange(async (v) => {
+      sl.setLimits(1, 20, 1).setValue(s.maxNew).onChange(async (v) => {
         s.maxNew = v;
         await this.host.saveSettings();
       }),

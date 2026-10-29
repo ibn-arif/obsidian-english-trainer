@@ -14,6 +14,19 @@ export function fakeApp() {
     f.extension = "md";
     return f;
   };
+  // a TFolder snapshot with direct children, built from the flat maps
+  const folderObj = (p: string): TFolder => {
+    const prefix = p + "/";
+    const direct = (x: string) => x.startsWith(prefix) && !x.slice(prefix.length).includes("/");
+    const f = new TFolder() as TFolder & { path: string; name: string; children: unknown[] };
+    f.path = p;
+    f.name = p.split("/").pop()!;
+    f.children = [
+      ...[...folders].filter(direct).map(folderObj),
+      ...[...files.keys()].filter(direct).map((k) => files.get(k)!.file),
+    ];
+    return f;
+  };
   const app = {
     vault: {
       getAbstractFileByPath: (p: string) => files.get(p)?.file ?? (folders.has(p) ? Object.assign(new TFolder(), { path: p }) : null),
@@ -33,6 +46,13 @@ export function fakeApp() {
       cachedRead: async (f: TFile) => files.get(f.path)!.text,
       read: async (f: TFile) => files.get(f.path)!.text,
       getMarkdownFiles: () => [...files.values()].map((x) => x.file),
+      getFileByPath: (p: string) => files.get(p)?.file ?? null,
+      getFolderByPath: (p: string) => (folders.has(p) ? folderObj(p) : null),
+      process: async (f: TFile, fn: (data: string) => string) => {
+        const entry = files.get(f.path)!;
+        entry.text = fn(entry.text);
+        return entry.text;
+      },
     },
     metadataCache: {
       getFileCache: (f: TFile) => {

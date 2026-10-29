@@ -25,8 +25,7 @@ export class SelectionButton {
     // below the selection (the iOS callout menu sits above it); above if there is no room
     const below = rect.bottom + 10;
     const top = below + h < window.innerHeight - 8 ? below : Math.max(8, rect.top - h - 10);
-    this.el.style.left = `${left}px`;
-    this.el.style.top = `${top}px`;
+    this.el.setCssProps({ "--et-sel-left": `${left}px`, "--et-sel-top": `${top}px` });
   }
 
   hide(): void {

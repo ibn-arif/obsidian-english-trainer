@@ -64,16 +64,18 @@ export class QuizView extends ItemView {
     };
     select.addEventListener("change", () => void refresh());
     await refresh();
-    start.addEventListener("click", async () => {
-      const cards = await refresh();
-      const s = this.settings();
-      const items = buildSession(cards, today(), s.sessionSize, s.maxNew, Math.random);
-      if (!items.length) return;
-      this.runner = new QuizRunner(items);
-      this.total = items.length;
-      this.touched.clear();
-      this.renderItem();
-    });
+    start.addEventListener("click", () => void this.startSession(refresh));
+  }
+
+  private async startSession(refresh: () => Promise<CardInfo[]>): Promise<void> {
+    const cards = await refresh();
+    const s = this.settings();
+    const items = buildSession(cards, today(), s.sessionSize, s.maxNew, Math.random);
+    if (!items.length) return;
+    this.runner = new QuizRunner(items);
+    this.total = items.length;
+    this.touched.clear();
+    this.renderItem();
   }
 
   private renderItem(): void {
@@ -83,7 +85,7 @@ export class QuizView extends ItemView {
     el.empty();
     const done = this.total - this.runner!.remaining();
     const bar = el.createDiv({ cls: "et-progress" });
-    bar.createDiv({ cls: "et-progress-fill" }).style.width = `${Math.min(100, (done / this.total) * 100)}%`;
+    bar.createDiv({ cls: "et-progress-fill" }).setCssProps({ "--et-progress": `${Math.min(100, (done / this.total) * 100)}%` });
     el.createDiv({ text: `${Math.min(done + 1, this.total)} из ${this.total}`, cls: "et-muted et-center" });
     const card = el.createDiv({ cls: "et-card" });
     if (item.format === "flash") this.flash(card, item);

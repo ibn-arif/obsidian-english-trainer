@@ -1,4 +1,4 @@
-import { App, TFile, normalizePath } from "obsidian";
+import { App, TFile, TFolder, normalizePath } from "obsidian";
 import { parseExamples, renderCard, safeFileName, splitFrontmatter } from "../card";
 import type { Settings } from "../settings";
 import { newSrs, today } from "../srs";
@@ -38,10 +38,21 @@ export async function ensureFolder(app: App, path: string): Promise<void> {
   }
 }
 
+/** Word cards anywhere under `folder` (walks only that folder, not the whole vault). */
 function cardsIn(app: App, folder: string): TFile[] {
-  const prefix = folder + "/";
-  return app.vault.getMarkdownFiles().filter((f) => f.path.startsWith(prefix) && fm(app, f)?.type === "word");
+  const root = app.vault.getFolderByPath(folder);
+  const out: TFile[] = [];
+  const walk = (f: TFolder) => {
+    for (const c of f.children) {
+      if (c instanceof TFolder) walk(c);
+      else if (c instanceof TFile && c.extension === "md" && fm(app, c)?.type === "word") out.push(c);
+    }
+  };
+  if (root) walk(root);
+  return out;
 }
+
+const str = (v: unknown, dflt = ""): string => (typeof v === "string" ? v : typeof v === "number" ? String(v) : dflt);
 
 function fm(app: App, f: TFile): Record<string, unknown> | undefined {
   return app.metadataCache.getFileCache(f)?.frontmatter;
@@ -53,8 +64,7 @@ export function findCard(app: App, d: DictRef, word: string): TFile | null {
     const v = fm(app, f)?.word;
     if ((typeof v === "string" ? v : f.basename).trim().toLowerCase() === w) return f;
   }
-  const byName = app.vault.getAbstractFileByPath(`${d.folder}/${safeFileName(word)}.md`);
-  return byName instanceof TFile ? byName : null;
+  return app.vault.getFileByPath(`${d.folder}/${safeFileName(word)}.md`);
 }
 
 export async function addWord(
@@ -99,10 +109,10 @@ export async function rebuildIndex(app: App, d: DictRef, extraNew?: TFile): Prom
     if (!meta) meta = parseFm(await app.vault.cachedRead(f));
     rows.push({
       file: f,
-      word: String(meta?.word ?? f.basename),
-      translation: String(meta?.translation ?? ""),
-      added: String(meta?.added ?? ""),
-      status: String(meta?.status ?? "новое"),
+      word: str(meta?.word, f.basename),
+      translation: str(meta?.translation),
+      added: str(meta?.added),
+      status: str(meta?.status, "новое"),
     });
   }
   rows.sort((a, b) => (b.added.localeCompare(a.added)) || a.word.localeCompare(b.word));
@@ -121,8 +131,8 @@ export async function rebuildIndex(app: App, d: DictRef, extraNew?: TFile): Prom
     "",
   ];
   await ensureFolder(app, d.index.split("/").slice(0, -1).join("/"));
-  const existing = app.vault.getAbstractFileByPath(d.index);
-  if (existing instanceof TFile) await app.vault.modify(existing, lines.join("\n"));
+  const existing = app.vault.getFileByPath(d.index);
+  if (existing) await app.vault.process(existing, () => lines.join("\n"));
   else await app.vault.create(d.index, lines.join("\n"));
 }
 
@@ -153,20 +163,19 @@ export async function listCards(app: App, s: Settings, d: DictRef | "all"): Prom
     const { body } = splitFrontmatter(await app.vault.cachedRead(f));
     out.push({
       file: f,
-      word: String(meta?.word ?? f.basename),
-      translation: String(meta?.translation ?? ""),
+      word: str(meta?.word, f.basename),
+      translation: str(meta?.translation),
       examples: parseExamples(body),
       srs: srsOf(meta),
-      dictionary: String(meta?.dictionary ?? "general"),
+      dictionary: str(meta?.dictionary, "general"),
     });
   }
   return out;
 }
 
 export function bookTitles(app: App, s: Settings): string[] {
-  const root = app.vault.getAbstractFileByPath(normalizePath(s.booksFolder));
-  const children = (root as { children?: { name: string; children?: unknown }[] } | null)?.children ?? [];
-  return children.filter((c) => c.children).map((c) => c.name).sort();
+  const root = app.vault.getFolderByPath(normalizePath(s.booksFolder));
+  return (root?.children ?? []).filter((c): c is TFolder => c instanceof TFolder).map((c) => c.name).sort();
 }
 
 /** Writes the new SRS state and status into the card's frontmatter. */
