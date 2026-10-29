@@ -11,8 +11,8 @@ export class ImportBookModal extends Modal {
     this.modalEl.addClass("et-modal");
     this.titleEl.setText("Загрузить книгу");
     const { contentEl } = this;
-    contentEl.createEl("p", { text: "EPUB раскладывается на главы-заметки, PDF открывается встроенным просмотрщиком.", cls: "et-muted" });
-    const input = contentEl.createEl("input", { type: "file", attr: { accept: ".epub,.pdf,application/epub+zip,application/pdf" } });
+    contentEl.createEl("p", { text: "EPUB и FB2 (в том числе .fb2.zip) раскладываются на главы-заметки, PDF открывается встроенным просмотрщиком.", cls: "et-muted" });
+    const input = contentEl.createEl("input", { type: "file", attr: { accept: ".epub,.fb2,.zip,.pdf,application/epub+zip,application/pdf,application/x-fictionbook+xml" } });
     const status = contentEl.createEl("p", { cls: "et-muted" });
     input.addEventListener("change", async () => {
       const f = input.files?.[0];

@@ -3,7 +3,8 @@ import { safeFileName } from "../card";
 import type { Settings } from "../settings";
 import { today } from "../srs";
 import { bookDict, ensureFolder, rebuildIndex } from "../vault/dictionary";
-import { parseEpub } from "./epub";
+import { parseEpub, type EpubBook } from "./epub";
+import { parseFb2 } from "./fb2";
 
 export interface BookFile {
   name: string;
@@ -15,10 +16,12 @@ const noExt = (p: string) => p.replace(/\.md$/, "");
 
 /** Creates English/Книги/<Название>/ with chapters (EPUB) or the PDF, a book note and an empty book dictionary. */
 export async function importBook(app: App, s: Settings, file: BookFile): Promise<TFile> {
-  const ext = file.name.split(".").pop()?.toLowerCase();
-  if (ext !== "epub" && ext !== "pdf") throw new Error("Поддерживаются только файлы EPUB или PDF");
-  const epub = ext === "epub" ? await parseEpub(file.data) : null;
-  const wanted = safeFileName(epub?.title || file.name.replace(/\.[^.]+$/, "")) || "Книга";
+  const lower = file.name.toLowerCase();
+  const ext = lower.endsWith(".fb2.zip") ? "fb2.zip" : lower.split(".").pop();
+  if (ext !== "epub" && ext !== "pdf" && ext !== "fb2" && ext !== "fb2.zip") throw new Error("Поддерживаются только файлы EPUB, FB2 или PDF");
+  const epub: EpubBook | null =
+    ext === "epub" ? await parseEpub(file.data) : ext === "pdf" ? null : await parseFb2(file.data, file.name);
+  const wanted = safeFileName(epub?.title || file.name.slice(0, file.name.length - ext.length - 1)) || "Книга";
 
   let title = wanted;
   for (let i = 2; app.vault.getAbstractFileByPath(normalizePath(`${s.booksFolder}/${title}`)); i++) title = `${wanted} (${i})`;
@@ -26,7 +29,8 @@ export async function importBook(app: App, s: Settings, file: BookFile): Promise
   await ensureFolder(app, root);
 
   const sourceName = ext === "pdf" ? `${title}.pdf` : file.name;
-  const source = await app.vault.createBinary(`${root}/${safeFileName(sourceName.replace(/\.[^.]+$/, ""))}.${ext}`, file.data);
+  const base = sourceName.slice(0, sourceName.length - ext.length - 1);
+  const source = await app.vault.createBinary(`${root}/${safeFileName(base) || title}.${ext}`, file.data);
   const bookNote = `${root}/${title}.md`;
   const dict = bookDict(s, title);
 

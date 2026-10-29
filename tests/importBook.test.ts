@@ -43,8 +43,16 @@ describe("importBook", () => {
     const second = await importBook(app, DEFAULT_SETTINGS, { name: "The Hobbit.pdf", data: new ArrayBuffer(8) });
     expect(second.path).toBe("English/Книги/The Hobbit (2)/The Hobbit (2).md");
   });
+  it("FB2: chapters like EPUB", async () => {
+    const { app, files } = fakeApp();
+    const xml = `<?xml version="1.0" encoding="utf-8"?><FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0"><description><title-info><book-title>Solaris</book-title></title-info></description><body><section><title><p>One</p></title><p>${"Kelvin arrived at the station. ".repeat(12)}</p></section></body></FictionBook>`;
+    const note = await importBook(app, DEFAULT_SETTINGS, { name: "solaris.fb2", data: new TextEncoder().encode(xml).buffer as ArrayBuffer });
+    expect(note.path).toBe("English/Книги/Solaris/Solaris.md");
+    expect(files.has("English/Книги/Solaris/Главы/01 — One.md")).toBe(true);
+    expect(files.has("English/Книги/Solaris/solaris.fb2")).toBe(true);
+  });
   it("unknown format is rejected", async () => {
     const { app } = fakeApp();
-    await expect(importBook(app, DEFAULT_SETTINGS, { name: "book.mobi", data: new ArrayBuffer(8) })).rejects.toThrow("EPUB или PDF");
+    await expect(importBook(app, DEFAULT_SETTINGS, { name: "book.mobi", data: new ArrayBuffer(8) })).rejects.toThrow("EPUB, FB2 или PDF");
   });
 });
