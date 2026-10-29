@@ -1,7 +1,7 @@
 {
   "id": "english-trainer",
   "name": "English Trainer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "minAppVersion": "1.9.0",
   "description": "Look up English words with Russian translations, transcription and examples, collect them in general and per-book dictionaries from EPUB, FB2 and PDF books, and learn them with spaced repetition quizzes.",
   "author": "ibn-arif",
