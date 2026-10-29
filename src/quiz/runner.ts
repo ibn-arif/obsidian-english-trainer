@@ -32,13 +32,14 @@ export class QuizRunner {
   }
 
   /** Returns the words whose last item has just been answered, with their grade. */
-  answer(correct: boolean): { card: CardInfo; grade: Grade }[] {
+  answer(correct: boolean, item?: QuizItem): { card: CardInfo; grade: Grade }[] {
+    if (item && this.queue[0]?.item !== item) return []; // stale tap on an item already answered
     const slot = this.queue.shift();
     if (!slot) return [];
     if (!slot.requeued && correct) this.firstTry.correct++;
     if (!correct) {
       this.missed.add(slot.item.card);
-      if (!slot.requeued) this.queue.push({ item: slot.item, requeued: true });
+      if (!slot.requeued) this.queue.push({ item: { ...slot.item }, requeued: true });
     }
     const card = slot.item.card;
     if (this.queue.some((s) => s.item.card === card)) return [];

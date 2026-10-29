@@ -21,6 +21,12 @@ describe("normalizeWord", () => {
   it("trims, collapses spaces, lower-cases", () => {
     expect(normalizeWord("  Give  Up ")).toBe("give up");
   });
+  it("strips punctuation and quotes around a selected word, keeps inner apostrophes and hyphens", () => {
+    expect(normalizeWord("reluctant,")).toBe("reluctant");
+    expect(normalizeWord("“Paul!”")).toBe("paul");
+    expect(normalizeWord("(don't)")).toBe("don't");
+    expect(normalizeWord("well-known.")).toBe("well-known");
+  });
 });
 
 describe("lookupWord", () => {

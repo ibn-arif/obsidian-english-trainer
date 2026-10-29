@@ -105,8 +105,8 @@ export class QuizView extends ItemView {
       const ex = item.card.examples[0];
       if (ex) card.createDiv({ text: ex.ru ? `${ex.en} — ${ex.ru}` : ex.en, cls: "et-muted et-example" });
       const row = card.createDiv({ cls: "et-row et-row-wide" });
-      row.createEl("button", { text: "Не знаю", cls: "et-btn et-no" }).addEventListener("click", () => void this.answer(false));
-      row.createEl("button", { text: "Знаю", cls: "et-btn et-yes" }).addEventListener("click", () => void this.answer(true));
+      row.createEl("button", { text: "Не знаю", cls: "et-btn et-no" }).addEventListener("click", () => void this.answer(false, item));
+      row.createEl("button", { text: "Знаю", cls: "et-btn et-yes" }).addEventListener("click", () => void this.answer(true, item));
     });
   }
 
@@ -123,7 +123,7 @@ export class QuizView extends ItemView {
           if (x.textContent === item.answer) x.addClass("et-right");
         }
         if (!ok) b.addClass("et-wrong");
-        window.setTimeout(() => void this.answer(ok), ok ? 700 : 1500);
+        window.setTimeout(() => void this.answer(ok, item), ok ? 700 : 1500);
       });
       return b;
     });
@@ -143,16 +143,17 @@ export class QuizView extends ItemView {
       check.remove();
       const fb = card.createDiv({ cls: ok ? "et-feedback et-right" : "et-feedback et-wrong" });
       fb.setText(ok ? "Верно!" : `Правильно: ${item.answer}`);
-      if (ok) window.setTimeout(() => void this.answer(true), 700);
-      else card.createEl("button", { text: "Дальше", cls: "et-btn et-wide" }).addEventListener("click", () => void this.answer(false));
+      if (ok) window.setTimeout(() => void this.answer(true, item), 700);
+      else card.createEl("button", { text: "Дальше", cls: "et-btn et-wide" }).addEventListener("click", () => void this.answer(false, item));
     };
     input.addEventListener("keydown", (e) => e.key === "Enter" && go());
     check.addEventListener("click", go);
     window.setTimeout(() => input.focus(), 50);
   }
 
-  private async answer(correct: boolean): Promise<void> {
-    const finished = this.runner!.answer(correct);
+  private async answer(correct: boolean, item: QuizItem): Promise<void> {
+    if (this.runner?.current() !== item) return;
+    const finished = this.runner.answer(correct, item);
     const day = today();
     for (const { card, grade } of finished) {
       const next = review(card.srs, grade, day);

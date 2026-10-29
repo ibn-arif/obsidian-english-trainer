@@ -45,3 +45,19 @@ describe("dictionary", () => {
     expect(await listCards(app, DEFAULT_SETTINGS, "all")).toHaveLength(2);
   });
 });
+
+describe("index at the vault root", () => {
+  it("does not try to create a folder with an empty name", async () => {
+    const { app, files } = fakeApp();
+    const d = { name: "general", folder: "Words", index: "Словарь.md" };
+    let emptyCreated = false;
+    const orig = (app as { vault: { createFolder: (p: string) => Promise<void> } }).vault.createFolder;
+    (app as { vault: { createFolder: (p: string) => Promise<void> } }).vault.createFolder = async (p: string) => {
+      if (!p) emptyCreated = true;
+      return orig(p);
+    };
+    await addWord(app, d, e("alpha"));
+    expect(emptyCreated).toBe(false);
+    expect(files.has("Словарь.md")).toBe(true);
+  });
+});

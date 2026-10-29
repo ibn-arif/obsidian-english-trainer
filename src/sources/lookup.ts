@@ -6,7 +6,11 @@ import { parseTatoeba } from "./tatoeba";
 import { parseWiktionary, wikitextOf } from "./wiktionary";
 
 export function normalizeWord(s: string): string {
-  return s.trim().replace(/\s+/g, " ").toLowerCase();
+  return s
+    .trim()
+    .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
 }
 
 async function getJson(http: Http, url: string): Promise<unknown> {

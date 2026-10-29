@@ -38,4 +38,19 @@ describe("QuizRunner", () => {
     expect(r.answer(false)).toEqual([{ card: B, grade: 0 }]);
     expect(r.current()).toBeNull();
   });
+  it("ignores a second answer for an item that is no longer current (double tap)", () => {
+    const r = new QuizRunner(items);
+    const first = r.current()!;
+    r.answer(true, first);
+    expect(r.answer(false, first)).toEqual([]);
+    expect(r.current()!.card.word).toBe("beta");
+    expect(r.summary().toRepeat).toEqual([]);
+  });
+  it("double tap on the last, wrongly answered item does not answer its re-queued copy", () => {
+    const only: QuizItem = { card: B, format: "type", prompt: "t", answer: "beta" };
+    const r = new QuizRunner([only]);
+    r.answer(false, only);
+    expect(r.answer(false, only)).toEqual([]);
+    expect(r.current()).not.toBeNull();
+  });
 });

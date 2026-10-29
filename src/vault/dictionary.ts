@@ -30,6 +30,7 @@ export function bookDict(s: Settings, title: string): DictRef {
 }
 
 export async function ensureFolder(app: App, path: string): Promise<void> {
+  if (!normalizePath(path)) return;
   const parts = normalizePath(path).split("/");
   for (let i = 1; i <= parts.length; i++) {
     const p = parts.slice(0, i).join("/");
