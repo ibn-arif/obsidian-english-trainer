@@ -1,6 +1,7 @@
 import { Editor, MarkdownView, Plugin, TAbstractFile, TFile, debounce } from "obsidian";
 import { DEFAULT_SETTINGS, SettingsTab, type Settings } from "./settings";
 import { AddWordModal } from "./ui/AddWordModal";
+import { ImportBookModal } from "./ui/ImportBookModal";
 import { generalDict, rebuildIndex, type DictRef } from "./vault/dictionary";
 
 export default class EnglishTrainerPlugin extends Plugin {
@@ -12,6 +13,7 @@ export default class EnglishTrainerPlugin extends Plugin {
 
     this.addRibbonIcon("languages", "Добавить английское слово", () => this.openAddWord());
     this.addCommand({ id: "add-word", name: "Добавить слово", callback: () => this.openAddWord() });
+    this.addCommand({ id: "import-book", name: "Загрузить книгу (EPUB/PDF)", callback: () => new ImportBookModal(this.app, this.settings).open() });
     this.addCommand({
       id: "add-selection-general",
       name: "Добавить выделенное в общий словарь",

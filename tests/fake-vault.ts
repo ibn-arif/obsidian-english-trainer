@@ -24,6 +24,12 @@ export function fakeApp() {
         return file;
       },
       modify: async (f: TFile, text: string) => void (files.get(f.path)!.text = text),
+      createBinary: async (p: string, _data: ArrayBuffer) => {
+        const file = mk(p);
+        file.extension = p.split(".").pop()!;
+        files.set(p, { file, text: "<binary>" });
+        return file;
+      },
       cachedRead: async (f: TFile) => files.get(f.path)!.text,
       read: async (f: TFile) => files.get(f.path)!.text,
       getMarkdownFiles: () => [...files.values()].map((x) => x.file),
